@@ -47,29 +47,62 @@ def evaluate(segmentation_module, loader, cfg, gpu):
     segmentation_module.eval()
 
     pbar = tqdm(total=len(loader))
+
     for batch_data in loader:
         # process data
+
         batch_data = batch_data[0]
+
+        print('Info:', batch_data['info'])
+
+        for key in batch_data:
+            print(key, type(batch_data[key]))
+
+            if isinstance(batch_data[key], torch.Tensor):
+                print(batch_data[key].shape)
+
+            if key == 'img_data':
+                for i, data in enumerate(batch_data[key]):
+                    # data.requires_grad = True
+
+                    print(i, type(data), data.shape, data.requires_grad)
+
         seg_label = as_numpy(batch_data['seg_label'][0])
         img_resized_list = batch_data['img_data']
 
+        print(seg_label.shape)
+
         torch.cuda.synchronize()
         tic = time.perf_counter()
-        with torch.no_grad():
-            segSize = (seg_label.shape[0], seg_label.shape[1])
-            scores = torch.zeros(1, cfg.DATASET.num_class, segSize[0], segSize[1])
-            scores = async_copy_to(scores, gpu)
 
-            for img in img_resized_list:
-                feed_dict = batch_data.copy()
-                feed_dict['img_data'] = img
-                del feed_dict['img_ori']
-                del feed_dict['info']
-                feed_dict = async_copy_to(feed_dict, gpu)
+        seg_size = (seg_label.shape[0], seg_label.shape[1])
+        scores = torch.zeros(1, cfg.DATASET.num_class, seg_size[0], seg_size[1])
+        scores = async_copy_to(scores, gpu)
+
+        for img in img_resized_list:
+            feed_dict = batch_data.copy()
+            feed_dict['img_data'] = img
+            del feed_dict['img_ori']
+            del feed_dict['info']
+            feed_dict = async_copy_to(feed_dict, gpu)
+
+            feed_dict['img_data'].requires_grad = True
+
+            print("Right before", feed_dict['img_data'].size())
 
                 # forward pass
-                scores_tmp = segmentation_module(feed_dict, segSize=segSize)
-                scores = scores + scores_tmp / len(cfg.DATASET.imgSizes)
+                # scores_tmp = segmentation_module(feed_dict, segSize=seg_size)
+
+            segmentation_module.zero_grad()
+
+            loss, acc = segmentation_module(feed_dict, segSize=seg_size)
+            loss = loss.mean()
+
+            loss.backward()
+
+            print(feed_dict['img_data'].grad.data.size())
+
+            scores = scores + scores_tmp / len(cfg.DATASET.imgSizes)
 
             _, pred = torch.max(scores, dim=1)
             pred = as_numpy(pred.squeeze(0).cpu())
@@ -80,6 +113,7 @@ def evaluate(segmentation_module, loader, cfg, gpu):
         # calculate accuracy
         acc, pix = accuracy(pred, seg_label)
         intersection, union = intersectionAndUnion(pred, seg_label, cfg.DATASET.num_class)
+
         acc_meter.update(acc, pix)
         intersection_meter.update(intersection)
         union_meter.update(union)
@@ -117,11 +151,19 @@ def main(cfg, gpu):
         fc_dim=cfg.MODEL.fc_dim,
         num_class=cfg.DATASET.num_class,
         weights=cfg.MODEL.weights_decoder,
-        use_softmax=True)
+        use_softmax=True
+    )
+
+    # use_softmax = True
 
     crit = nn.NLLLoss(ignore_index=-1)
 
-    segmentation_module = SegmentationModule(net_encoder, net_decoder, crit)
+    if cfg.MODEL.arch_decoder.endswith('deepsup'):
+        segmentation_module = SegmentationModule(
+            net_encoder, net_decoder, crit, cfg.TRAIN.deep_sup_scale)
+    else:
+        segmentation_module = SegmentationModule(
+            net_encoder, net_decoder, crit)
 
     # Dataset and Loader
     dataset_val = ValDataset(

@@ -255,6 +255,43 @@ class ValDataset(BaseDataset):
         return self.num_sample
 
 
+class AttackDataset(BaseDataset):
+    def __init__(self, root_dataset, odgt, opt, **kwargs):
+        super(AttackDataset, self).__init__(odgt, opt, **kwargs)
+        self.root_dataset = root_dataset
+
+    def __getitem__(self, index):
+        this_record = self.list_sample[index]
+        # load image and label
+        image_path = os.path.join(self.root_dataset, this_record['fpath_img'])
+        segm_path = os.path.join(self.root_dataset, this_record['fpath_segm'])
+        img = Image.open(image_path).convert('RGB')
+        segm = Image.open(segm_path)
+        assert(segm.mode == "L")
+        assert(img.size[0] == segm.size[0])
+        assert(img.size[1] == segm.size[1])
+
+        ori_width, ori_height = img.size
+
+        # segm transform, to torch long tensor HxW
+        segm = self.segm_transform(segm)
+        batch_segms = torch.unsqueeze(segm, 0)
+
+        img = self.img_transform(img)
+        img = torch.unsqueeze(img, 0)
+
+        output = dict()
+        output['img_ori'] = np.array(img)
+        output['img_data'] = img.contiguous()
+        output['seg_label'] = batch_segms.contiguous()
+        output['info'] = this_record['fpath_img']
+        output['segm'] = this_record['fpath_segm']
+        return output
+
+    def __len__(self):
+        return self.num_sample
+
+
 class TestDataset(BaseDataset):
     def __init__(self, odgt, opt, **kwargs):
         super(TestDataset, self).__init__(odgt, opt, **kwargs)

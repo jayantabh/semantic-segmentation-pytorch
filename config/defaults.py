@@ -42,6 +42,39 @@ _C.MODEL.weights_decoder = ""
 _C.MODEL.fc_dim = 2048
 
 # -----------------------------------------------------------------------------
+# Attack
+# -----------------------------------------------------------------------------
+_C.ATTACK = CN()
+# attack method used
+_C.ATTACK.method = "fgsm"
+# attack batch size
+_C.ATTACK.batch_size = 1
+# eps for attack
+_C.ATTACK.eps = 0.25
+# dir for output of attack
+_C.ATTACK.output_dir = "./output/"
+# if attack should be done on validation set
+_C.ATTACK.use_val = True
+# target id to be used for attack if required
+_C.ATTACK.target_idx = 0
+# number of iterations to generate attack
+_C.ATTACK.num_iters = 500
+# alpha if required for iterative fgsm ll
+_C.ATTACK.alpha = 0.5
+# maximum perturbation with attack
+_C.ATTACK.do_max_pert = True
+# save original prediction
+_C.ATTACK.orig_save_pred = False
+# save perturbed prediction image
+_C.ATTACK.orig_save_pred_img = True
+# save perturbed prediction
+_C.ATTACK.pert_save_pred = True
+# save perturbed prediction image
+_C.ATTACK.pert_save_pred_img = True
+# save perturbed image
+_C.ATTACK.save_pert_image = False
+
+# -----------------------------------------------------------------------------
 # Training
 # -----------------------------------------------------------------------------
 _C.TRAIN = CN()

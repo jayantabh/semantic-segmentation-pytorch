@@ -5,18 +5,24 @@ DATASET:
   num_class: 150
   imgSizes: (300, 375, 450, 525, 600)
   imgMaxSize: 1000
-  padding_constant: 32
-  segm_downsampling_rate: 4
+  padding_constant: 8
+  segm_downsampling_rate: 8
   random_flip: True
 
 MODEL:
-  arch_encoder: "resnet101"
-  arch_decoder: "upernet"
-  fc_dim: 2048
+  arch_encoder: "resnet18dilated"
+  arch_decoder: "ppm_deepsup"
+  fc_dim: 512
+
+ATTACK:
+  method: "fgsm"
+  eps: 0.25
+  output_dir: "./output/"
+  use_val: True
 
 TRAIN:
   batch_size_per_gpu: 2
-  num_epoch: 40
+  num_epoch: 20
   start_epoch: 0
   epoch_iters: 5000
   optim: "SGD"
@@ -33,10 +39,10 @@ TRAIN:
 
 VAL:
   visualize: False
-  checkpoint: "epoch_50.pth"
+  checkpoint: "epoch_20.pth"
 
 TEST:
-  checkpoint: "epoch_50.pth"
+  checkpoint: "epoch_20.pth"
   result: "./"
 
-DIR: "ckpt/ade20k-resnet101-upernet"
+DIR: "ckpt/ade20k-resnet18dilated-ppm_deepsup"

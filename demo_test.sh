@@ -23,7 +23,7 @@ if [ ! -e $TEST_IMG ]; then
 fi
 
 # Inference
-python3 -u test.py \
+python -u test.py \
   --imgs $TEST_IMG \
   --cfg config/ade20k-resnet50dilated-ppm_deepsup.yaml \
   DIR $MODEL_PATH \

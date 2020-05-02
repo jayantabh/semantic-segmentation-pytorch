@@ -4,3 +4,7 @@ ckpt/
 vis/
 log/
 pretrained/
+output/
+__pycache__/
+data/
+.idea/

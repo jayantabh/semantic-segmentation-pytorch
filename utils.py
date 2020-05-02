@@ -5,6 +5,7 @@ import re
 import functools
 import fnmatch
 import numpy as np
+import errno
 
 
 def setup_logger(distributed_rank=0, filename="log.txt"):
@@ -198,3 +199,30 @@ def parse_devices(input_devices):
             raise NotSupportedCliException(
                 'Can not recognize device: "{}"'.format(d))
     return ret
+
+
+def create_dir(dir_name):
+    """Create directory if it does not exist."""
+
+    try:
+        os.makedirs(dir_name)
+    except OSError as e:
+        if e.errno != errno.EEXIST:
+            raise
+
+
+def save_result(data, pred, dir_result):
+    (img, seg, info) = data
+
+    # segmentation
+    seg_color = colorEncode(seg, colors)
+
+    # prediction
+    pred_color = colorEncode(pred, colors)
+
+    # aggregate images and save
+    im_vis = np.concatenate((img, seg_color, pred_color),
+                            axis=1).astype(np.uint8)
+
+    img_name = info.split('/')[-1]
+    Image.fromarray(im_vis).save(os.path.join(dir_result, img_name.replace('.jpg', '.png')))
