@@ -73,6 +73,7 @@ def fgsm(model, loader, eps, out_dir, gpu):
     list_adv = []
     added_noise = []
 
+    pbar = tqdm(total=len(loader))
     for batch_data in loader:
         seg_label = as_numpy(batch_data['seg_label'][0])
         img = batch_data['img_data']
@@ -122,6 +123,7 @@ def fgsm(model, loader, eps, out_dir, gpu):
 
         list_adv.append({'fpath_img': img_path, 'fpath_segm': batch_data['segm']})
         added_noise.append(image_pert)
+        pbar.update(1)
 
     return list_adv, _
 

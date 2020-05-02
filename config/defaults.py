@@ -64,7 +64,7 @@ _C.ATTACK.alpha = 0.5
 # maximum perturbation with attack
 _C.ATTACK.do_max_pert = True
 # save original prediction
-_C.ATTACK.orig_save_pred = False
+_C.ATTACK.orig_save_pred = True
 # save perturbed prediction image
 _C.ATTACK.orig_save_pred_img = True
 # save perturbed prediction
